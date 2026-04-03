@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="108" fill="#6366f1"/>
+  <g transform="translate(256,256)">
+    <!-- Dumbbell bar -->
+    <rect x="-140" y="-8" width="280" height="16" rx="8" fill="white"/>
+    <!-- Left weight plates -->
+    <rect x="-160" y="-48" width="32" height="96" rx="8" fill="white"/>
+    <rect x="-180" y="-36" width="16" height="72" rx="6" fill="rgba(255,255,255,0.7)"/>
+    <!-- Right weight plates -->
+    <rect x="128" y="-48" width="32" height="96" rx="8" fill="white"/>
+    <rect x="164" y="-36" width="16" height="72" rx="6" fill="rgba(255,255,255,0.7)"/>
+    <!-- Pulse line below -->
+    <polyline points="-60,60 -30,60 -15,36 0,84 15,36 30,60 60,60" fill="none" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

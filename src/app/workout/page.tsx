@@ -261,7 +261,7 @@ function SessionCard({
   });
 
   return (
-    <Link href={`/workout/${session.id}`}>
+    <Link href={`/workout/detail?id=${session.id}`}>
       <Card>
       <div className="flex items-start justify-between mb-2">
         <div>

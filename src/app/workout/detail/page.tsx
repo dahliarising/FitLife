@@ -1,18 +1,20 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import { Card, Button } from '@/components/ui';
 import { useWorkout } from '@/contexts/WorkoutContext';
 import { getExerciseById } from '@/data/exercises';
 import { MUSCLE_GROUP_LABELS } from '@/types/workout';
 
-export default function SessionDetailPage() {
-  const params = useParams();
+function SessionDetailContent() {
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { getSession, deleteSession } = useWorkout();
 
-  const session = getSession(params.id as string);
+  const sessionId = searchParams.get('id');
+  const session = sessionId ? getSession(sessionId) : undefined;
 
   if (!session) {
     return (
@@ -120,5 +122,13 @@ export default function SessionDetailPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function SessionDetailPage() {
+  return (
+    <Suspense>
+      <SessionDetailContent />
+    </Suspense>
   );
 }
