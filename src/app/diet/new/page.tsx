@@ -7,7 +7,7 @@ import { Button } from '@/components/ui';
 import FoodPicker from '@/components/diet/FoodPicker';
 import MealLogger from '@/components/diet/MealLogger';
 import { useDiet } from '@/contexts/DietContext';
-import { Food, MealEntry, MealType, MEAL_TYPE_LABELS, MEAL_TYPE_ICONS } from '@/types/diet';
+import { Food, MealEntry, MealType, MEAL_TYPE_LABELS } from '@/types/diet';
 import { getFoodById, calculateNutrition } from '@/data/foods';
 
 const MEAL_TYPES: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
@@ -73,7 +73,7 @@ function NewMealContent() {
 
   return (
     <>
-      <Header title={`${MEAL_TYPE_ICONS[mealType]} ${MEAL_TYPE_LABELS[mealType]} 추가`} />
+      <Header title={`${MEAL_TYPE_LABELS[mealType]} 추가`} />
       <div className="mx-auto max-w-lg px-4 py-6 space-y-4">
         {/* 식사 타입 선택 (프리셋 없을 때) */}
         {!presetMeal && step === 'type' && (
@@ -88,7 +88,7 @@ function NewMealContent() {
                 }}
                 className="w-full flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/30 transition-colors"
               >
-                <span className="text-2xl">{MEAL_TYPE_ICONS[type]}</span>
+                <span className="text-lg font-bold text-primary">{MEAL_TYPE_LABELS[type][0]}</span>
                 <span className="font-semibold text-sm">{MEAL_TYPE_LABELS[type]}</span>
               </button>
             ))}
