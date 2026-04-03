@@ -31,7 +31,7 @@ export default function ReportPage() {
           <div className="space-y-2">
             {report.insights.map((msg, i) => (
               <div key={i} className="flex gap-2 items-start">
-                <span className="text-sm mt-0.5">💡</span>
+                <div className="w-5 h-5 rounded bg-amber-100 text-amber-600 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">!</div>
                 <p className="text-sm">{msg}</p>
               </div>
             ))}
@@ -52,8 +52,8 @@ export default function ReportPage() {
         <Card>
           <h3 className="text-sm font-semibold text-muted mb-3">식단</h3>
           <div className="grid grid-cols-3 gap-4 text-center">
-            <div><p className="text-xl font-bold text-primary">{report.diet.avgCalories || '—'}</p><p className="text-[10px] text-muted">평균 칼로리</p></div>
-            <div><p className="text-xl font-bold text-secondary">{report.diet.avgProtein || '—'}g</p><p className="text-[10px] text-muted">평균 단백질</p></div>
+            <div><p className={`text-xl font-bold ${report.diet.avgCalories ? 'text-primary' : 'text-foreground/30'}`}>{report.diet.avgCalories || 0}</p><p className="text-[10px] text-muted">평균 칼로리</p></div>
+            <div><p className={`text-xl font-bold ${report.diet.avgProtein ? 'text-secondary' : 'text-foreground/30'}`}>{report.diet.avgProtein || 0}g</p><p className="text-[10px] text-muted">평균 단백질</p></div>
             <div><p className="text-xl font-bold text-accent">{report.diet.daysTracked}</p><p className="text-[10px] text-muted">기록일</p></div>
           </div>
         </Card>
@@ -63,7 +63,7 @@ export default function ReportPage() {
           <h3 className="text-sm font-semibold text-muted mb-3">웰니스</h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
-              <p className="text-xl font-bold text-primary">{report.sleep.avgHours || '—'}h</p>
+              <p className={`text-xl font-bold ${report.sleep.avgHours ? 'text-primary' : 'text-foreground/30'}`}>{report.sleep.avgHours || 0}h</p>
               <p className="text-[10px] text-muted">평균 수면</p>
             </div>
             <div className="text-center">

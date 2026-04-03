@@ -179,15 +179,15 @@ export default function RunningPage() {
         <Card>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-2xl font-bold text-primary">{totalDist}</p>
+              <p className={`text-2xl font-bold ${totalDist ? 'text-primary' : 'text-foreground/30'}`}>{totalDist}</p>
               <p className="text-xs text-muted">총 거리 (km)</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-secondary">{sessions.length}</p>
+              <p className={`text-2xl font-bold ${sessions.length ? 'text-secondary' : 'text-foreground/30'}`}>{sessions.length}</p>
               <p className="text-xs text-muted">러닝 횟수</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-accent">{bestPace > 0 ? formatPace(bestPace) : '—'}</p>
+              <p className={`text-2xl font-bold ${bestPace > 0 ? 'text-accent' : 'text-foreground/30'}`}>{bestPace > 0 ? formatPace(bestPace) : '0'}</p>
               <p className="text-xs text-muted">최고 페이스</p>
             </div>
           </div>
