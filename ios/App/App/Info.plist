@@ -47,5 +47,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSHealthShareUsageDescription</key>
+	<string>FitLife에서 운동 기록, 걸음 수, 심박수를 읽어 건강 데이터를 통합합니다</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>FitLife에서 완료한 운동을 건강 앱에 기록합니다</string>
 </dict>
 </plist>

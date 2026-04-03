@@ -1,10 +1,12 @@
 import Foundation
 import WatchConnectivity
-import Combine
+import WatchKit
 
 /// watchOS 운동 세션 관리 + iPhone 동기화
 class WorkoutManager: NSObject, ObservableObject {
-    // MARK: - Published state
+
+    // MARK: - Published State
+
     @Published var isWorkoutActive = false
     @Published var isResting = false
     @Published var restTimeRemaining = 90
@@ -13,15 +15,31 @@ class WorkoutManager: NSObject, ObservableObject {
     @Published var currentSetIndex = 0
     @Published var currentWeight: Double = 0
     @Published var currentReps = 0
+    @Published var totalSetsInExercise = 3
 
-    @Published var todayRoutine: String?
+    @Published var todayRoutineLabel: String?
     @Published var todaySets = 0
     @Published var todayVolume = 0
 
+    // 추천 운동 목록 (iPhone에서 수신)
+    @Published var recommendedExercises: [ExerciseItem] = []
+    @Published var currentExerciseIndex = 0
+    @Published var hasReceivedData = false
+
+    // MARK: - Types
+
+    struct ExerciseItem: Identifiable {
+        let id: String
+        let name: String
+        let weight: Double
+        let reps: Int
+        let sets: Int
+        let equipment: String
+    }
+
     // MARK: - Internal
+
     private var restTimer: Timer?
-    private var exercises: [[String: Any]] = []
-    private var currentExerciseIndex = 0
     private var completedSets: [[String: Any]] = []
 
     override init() {
@@ -36,15 +54,21 @@ class WorkoutManager: NSObject, ObservableObject {
         currentExerciseIndex = 0
         currentSetIndex = 0
         completedSets = []
+        todaySets = 0
+        todayVolume = 0
 
-        // Default exercise if no data from iPhone
-        if exercises.isEmpty {
-            currentExerciseName = "운동"
+        if recommendedExercises.isEmpty {
+            // 추천 데이터 없으면 기본값
+            currentExerciseName = "프리 운동"
             currentWeight = 20
             currentReps = 10
+            totalSetsInExercise = 3
         } else {
             loadCurrentExercise()
         }
+
+        // 시작 햅틱
+        WKInterfaceDevice.current().play(.start)
     }
 
     func completeSet() {
@@ -54,9 +78,11 @@ class WorkoutManager: NSObject, ObservableObject {
             return
         }
 
-        // Record completed set
+        // 완료 기록
         let setData: [String: Any] = [
             "exercise": currentExerciseName,
+            "exerciseId": recommendedExercises.indices.contains(currentExerciseIndex)
+                ? recommendedExercises[currentExerciseIndex].id : "unknown",
             "weight": currentWeight,
             "reps": currentReps,
             "setIndex": currentSetIndex,
@@ -66,8 +92,16 @@ class WorkoutManager: NSObject, ObservableObject {
         todaySets += 1
         todayVolume += Int(currentWeight) * currentReps
 
-        // Start rest timer
+        // 세트 완료 햅틱
+        WKInterfaceDevice.current().play(.success)
+
+        // 휴식 타이머 시작
         startRestTimer()
+    }
+
+    func skipRest() {
+        stopRestTimer()
+        advanceToNextSet()
     }
 
     func endWorkout() {
@@ -75,8 +109,21 @@ class WorkoutManager: NSObject, ObservableObject {
         isWorkoutActive = false
         isResting = false
 
-        // Send completed workout data to iPhone
+        // 종료 햅틱
+        WKInterfaceDevice.current().play(.stop)
+
+        // iPhone에 완료 데이터 전송
         sendWorkoutToiPhone()
+    }
+
+    // MARK: - Weight/Reps Adjustment
+
+    func adjustWeight(delta: Double) {
+        currentWeight = max(0, currentWeight + delta)
+    }
+
+    func adjustReps(delta: Int) {
+        currentReps = max(1, currentReps + delta)
     }
 
     // MARK: - Rest Timer
@@ -87,10 +134,18 @@ class WorkoutManager: NSObject, ObservableObject {
 
         restTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             guard let self else { return }
-            if self.restTimeRemaining > 0 {
+            if self.restTimeRemaining > 1 {
                 self.restTimeRemaining -= 1
+                // 10초 남았을 때 알림
+                if self.restTimeRemaining == 10 {
+                    WKInterfaceDevice.current().play(.notification)
+                }
             } else {
+                self.restTimeRemaining = 0
                 self.stopRestTimer()
+                // 휴식 끝 강한 진동
+                WKInterfaceDevice.current().play(.directionUp)
+                WKInterfaceDevice.current().play(.directionUp)
                 self.advanceToNextSet()
             }
         }
@@ -104,24 +159,30 @@ class WorkoutManager: NSObject, ObservableObject {
 
     private func advanceToNextSet() {
         currentSetIndex += 1
-        // 3 sets per exercise, then move to next exercise
-        if currentSetIndex >= 3 {
+
+        if currentSetIndex >= totalSetsInExercise {
+            // 다음 운동으로
             currentSetIndex = 0
             currentExerciseIndex += 1
-            if currentExerciseIndex < exercises.count {
+
+            if currentExerciseIndex < recommendedExercises.count {
                 loadCurrentExercise()
+                // 운동 전환 햅틱
+                WKInterfaceDevice.current().play(.click)
             } else {
+                // 모든 운동 완료
                 endWorkout()
             }
         }
     }
 
     private func loadCurrentExercise() {
-        guard currentExerciseIndex < exercises.count else { return }
-        let ex = exercises[currentExerciseIndex]
-        currentExerciseName = ex["name"] as? String ?? "운동"
-        currentWeight = ex["weight"] as? Double ?? 20
-        currentReps = ex["reps"] as? Int ?? 10
+        guard currentExerciseIndex < recommendedExercises.count else { return }
+        let ex = recommendedExercises[currentExerciseIndex]
+        currentExerciseName = ex.name
+        currentWeight = ex.weight
+        currentReps = ex.reps
+        totalSetsInExercise = ex.sets
     }
 
     // MARK: - WatchConnectivity
@@ -133,42 +194,84 @@ class WorkoutManager: NSObject, ObservableObject {
         session.activate()
     }
 
+    /// iPhone에 운동 데이터 보내기
     private func sendWorkoutToiPhone() {
-        guard WCSession.default.isReachable else { return }
+        guard WCSession.default.activationState == .activated else { return }
 
         let message: [String: Any] = [
             "action": "workoutCompleted",
             "sets": completedSets,
             "totalSets": todaySets,
             "totalVolume": todayVolume,
-            "timestamp": Date().timeIntervalSince1970,
+            "date": ISO8601DateFormatter().string(from: Date()),
         ]
 
-        WCSession.default.sendMessage(message, replyHandler: nil)
+        // reachable이면 즉시 전송, 아니면 userInfo로 큐잉
+        if WCSession.default.isReachable {
+            WCSession.default.sendMessage(message, replyHandler: nil)
+        } else {
+            WCSession.default.transferUserInfo(message)
+        }
+    }
+
+    /// iPhone에 오늘 운동 데이터 요청
+    func requestTodayWorkout() {
+        guard WCSession.default.activationState == .activated,
+              WCSession.default.isReachable else { return }
+
+        WCSession.default.sendMessage(
+            ["action": "requestTodayWorkout"],
+            replyHandler: { [weak self] reply in
+                DispatchQueue.main.async {
+                    self?.handleTodayWorkoutReply(reply)
+                }
+            }
+        )
+    }
+
+    private func handleTodayWorkoutReply(_ reply: [String: Any]) {
+        if let routineLabel = reply["routineLabel"] as? String {
+            todayRoutineLabel = routineLabel
+        }
+
+        if let exercises = reply["exercises"] as? [[String: Any]] {
+            recommendedExercises = exercises.compactMap { dict in
+                guard let id = dict["id"] as? String,
+                      let name = dict["name"] as? String else { return nil }
+                return ExerciseItem(
+                    id: id,
+                    name: name,
+                    weight: dict["weight"] as? Double ?? 20,
+                    reps: dict["reps"] as? Int ?? 10,
+                    sets: dict["sets"] as? Int ?? 3,
+                    equipment: dict["equipment"] as? String ?? ""
+                )
+            }
+            hasReceivedData = true
+        }
     }
 }
 
 // MARK: - WCSessionDelegate
+
 extension WorkoutManager: WCSessionDelegate {
-    func session(
-        _ session: WCSession,
-        activationDidCompleteWith activationState: WCSessionActivationState,
-        error: Error?
-    ) {
-        // Activation complete
+    func session(_ session: WCSession, activationDidCompleteWith state: WCSessionActivationState, error: Error?) {
+        if state == .activated {
+            DispatchQueue.main.async { [weak self] in
+                self?.requestTodayWorkout()
+            }
+        }
     }
 
     func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
         DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
+            self?.handleTodayWorkoutReply(message)
+        }
+    }
 
-            if let routine = message["todayRoutine"] as? String {
-                self.todayRoutine = routine
-            }
-
-            if let exerciseList = message["exercises"] as? [[String: Any]] {
-                self.exercises = exerciseList
-            }
+    func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
+        DispatchQueue.main.async { [weak self] in
+            self?.handleTodayWorkoutReply(userInfo)
         }
     }
 }

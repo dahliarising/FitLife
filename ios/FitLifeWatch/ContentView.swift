@@ -15,140 +15,257 @@ struct ContentView: View {
 }
 
 // MARK: - Start View
+
 struct StartView: View {
-    @EnvironmentObject var workoutManager: WorkoutManager
+    @EnvironmentObject var wm: WorkoutManager
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
-                // Today's routine
-                VStack(spacing: 8) {
+            VStack(spacing: 12) {
+                // Header
+                VStack(spacing: 4) {
                     Image(systemName: "figure.strengthtraining.traditional")
-                        .font(.system(size: 40))
+                        .font(.system(size: 32))
                         .foregroundColor(.indigo)
 
                     Text("FitLife")
                         .font(.headline)
 
-                    if let routine = workoutManager.todayRoutine {
+                    if let routine = wm.todayRoutineLabel {
                         Text(routine)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    } else {
-                        Text("오늘의 운동")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                 }
-                .padding(.top, 8)
+                .padding(.top, 4)
 
-                // Start workout button
-                Button(action: { workoutManager.startWorkout() }) {
+                // 추천 운동 목록
+                if wm.hasReceivedData && !wm.recommendedExercises.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("오늘의 운동")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+
+                        ForEach(wm.recommendedExercises) { ex in
+                            HStack {
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(ex.name)
+                                        .font(.caption)
+                                        .fontWeight(.semibold)
+                                    Text("\(ex.equipment)")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                }
+                                Spacer()
+                                Text("\(Int(ex.weight))kg x\(ex.reps)")
+                                    .font(.caption2)
+                                    .foregroundColor(.indigo)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+                    .padding(.horizontal, 4)
+                }
+
+                // Start button
+                Button(action: { wm.startWorkout() }) {
                     Label("운동 시작", systemImage: "play.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.indigo)
 
-                // Quick stats
-                if workoutManager.todaySets > 0 {
-                    HStack(spacing: 16) {
-                        StatBadge(value: "\(workoutManager.todaySets)", label: "세트")
-                        StatBadge(value: "\(workoutManager.todayVolume)kg", label: "볼륨")
+                // Refresh
+                if !wm.hasReceivedData {
+                    Button(action: { wm.requestTodayWorkout() }) {
+                        Label("데이터 새로고침", systemImage: "arrow.clockwise")
+                            .font(.caption2)
                     }
+                    .buttonStyle(.bordered)
                 }
             }
-            .padding()
+            .padding(.horizontal, 4)
         }
         .navigationTitle("FitLife")
+        .onAppear { wm.requestTodayWorkout() }
     }
 }
 
 // MARK: - Active Workout View
+
 struct ActiveWorkoutView: View {
-    @EnvironmentObject var workoutManager: WorkoutManager
+    @EnvironmentObject var wm: WorkoutManager
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 12) {
-                // Current exercise
-                Text(workoutManager.currentExerciseName)
-                    .font(.headline)
+            VStack(spacing: 8) {
+                // Exercise name + progress
+                VStack(spacing: 2) {
+                    Text(wm.currentExerciseName)
+                        .font(.headline)
+                        .lineLimit(1)
 
-                // Set info
-                Text("세트 \(workoutManager.currentSetIndex + 1)")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-
-                // Weight & Reps
-                HStack(spacing: 20) {
-                    VStack {
-                        Text("\(workoutManager.currentWeight, specifier: "%.1f")")
-                            .font(.system(size: 32, weight: .bold, design: .rounded))
-                            .foregroundColor(.indigo)
-                        Text("kg")
+                    if !wm.recommendedExercises.isEmpty {
+                        Text("운동 \(wm.currentExerciseIndex + 1)/\(wm.recommendedExercises.count)")
                             .font(.caption2)
                             .foregroundColor(.secondary)
                     }
 
-                    Text("×")
-                        .font(.title2)
+                    Text("세트 \(wm.currentSetIndex + 1)/\(wm.totalSetsInExercise)")
+                        .font(.caption)
                         .foregroundColor(.secondary)
-
-                    VStack {
-                        Text("\(workoutManager.currentReps)")
-                            .font(.system(size: 32, weight: .bold, design: .rounded))
-                            .foregroundColor(.green)
-                        Text("렙")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
                 }
-                .padding(.vertical, 8)
 
-                // Rest timer
-                if workoutManager.isResting {
-                    VStack(spacing: 4) {
-                        Text("휴식")
+                if wm.isResting {
+                    // Rest timer
+                    RestTimerView()
+                } else {
+                    // Weight & Reps with adjustment
+                    WeightRepsView()
+                }
+
+                // Buttons
+                VStack(spacing: 6) {
+                    if wm.isResting {
+                        Button(action: { wm.skipRest() }) {
+                            Label("건너뛰기", systemImage: "forward.fill")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
+                    } else {
+                        Button(action: { wm.completeSet() }) {
+                            Label("세트 완료", systemImage: "checkmark.circle.fill")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
+                    }
+
+                    Button(action: { wm.endWorkout() }) {
+                        Label("운동 종료", systemImage: "stop.fill")
                             .font(.caption)
-                            .foregroundColor(.secondary)
-                        Text("\(workoutManager.restTimeRemaining)")
-                            .font(.system(size: 36, weight: .bold, design: .rounded))
-                            .foregroundColor(.orange)
-                        Text("초")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity)
                     }
-                    .padding(.vertical, 4)
+                    .buttonStyle(.bordered)
+                    .tint(.red)
                 }
 
-                // Complete set button
-                Button(action: { workoutManager.completeSet() }) {
-                    Label(
-                        workoutManager.isResting ? "건너뛰기" : "세트 완료",
-                        systemImage: "checkmark.circle.fill"
-                    )
-                    .frame(maxWidth: .infinity)
+                // Session stats
+                HStack(spacing: 16) {
+                    StatBadge(value: "\(wm.todaySets)", label: "세트")
+                    StatBadge(value: "\(wm.todayVolume)kg", label: "볼륨")
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.green)
-
-                // End workout
-                Button(action: { workoutManager.endWorkout() }) {
-                    Label("운동 종료", systemImage: "stop.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .tint(.red)
+                .padding(.top, 4)
             }
-            .padding()
+            .padding(.horizontal, 4)
         }
         .navigationTitle("운동 중")
         .navigationBarBackButtonHidden(true)
     }
 }
 
-// MARK: - Components
+// MARK: - Rest Timer
+
+struct RestTimerView: View {
+    @EnvironmentObject var wm: WorkoutManager
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text("휴식")
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            Text("\(wm.restTimeRemaining)")
+                .font(.system(size: 48, weight: .bold, design: .rounded))
+                .foregroundColor(wm.restTimeRemaining <= 10 ? .red : .orange)
+                .monospacedDigit()
+
+            Text("초")
+                .font(.caption2)
+                .foregroundColor(.secondary)
+
+            // Progress ring
+            ZStack {
+                Circle()
+                    .stroke(.gray.opacity(0.2), lineWidth: 4)
+                Circle()
+                    .trim(from: 0, to: CGFloat(wm.restTimeRemaining) / 90.0)
+                    .stroke(.orange, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .animation(.linear(duration: 1), value: wm.restTimeRemaining)
+            }
+            .frame(width: 60, height: 60)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+// MARK: - Weight & Reps Adjustment
+
+struct WeightRepsView: View {
+    @EnvironmentObject var wm: WorkoutManager
+
+    var body: some View {
+        HStack(spacing: 16) {
+            // Weight
+            VStack(spacing: 4) {
+                Text("\(wm.currentWeight, specifier: "%.1f")")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundColor(.indigo)
+                    .monospacedDigit()
+                Text("kg")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                HStack(spacing: 8) {
+                    Button(action: { wm.adjustWeight(-2.5) }) {
+                        Image(systemName: "minus")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button(action: { wm.adjustWeight(2.5) }) {
+                        Image(systemName: "plus")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+
+            Text("x")
+                .font(.title3)
+                .foregroundColor(.secondary)
+
+            // Reps
+            VStack(spacing: 4) {
+                Text("\(wm.currentReps)")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundColor(.green)
+                    .monospacedDigit()
+                Text("렙")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                HStack(spacing: 8) {
+                    Button(action: { wm.adjustReps(-1) }) {
+                        Image(systemName: "minus")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button(action: { wm.adjustReps(1) }) {
+                        Image(systemName: "plus")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+        }
+        .padding(.vertical, 8)
+    }
+}
+
+// MARK: - Stat Badge
+
 struct StatBadge: View {
     let value: String
     let label: String
@@ -156,13 +273,14 @@ struct StatBadge: View {
     var body: some View {
         VStack(spacing: 2) {
             Text(value)
-                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .monospacedDigit()
             Text(label)
                 .font(.caption2)
                 .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
         .background(Color(.systemGray5))
         .cornerRadius(12)
     }

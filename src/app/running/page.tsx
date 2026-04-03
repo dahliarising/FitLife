@@ -1,15 +1,47 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Header from '@/components/Header';
 import { Card, Button } from '@/components/ui';
 import { useRunning } from '@/contexts/RunningContext';
 import { formatPace, formatDuration, estimateCalories } from '@/types/running';
+import { isHealthKitAvailable, requestHealthKitPermission, fetchRunningWorkouts } from '@/lib/healthkit';
 
 type View = 'list' | 'active' | 'manual';
 
 export default function RunningPage() {
   const { sessions, addSession, deleteSession, getTotalDistance, getBestPace } = useRunning();
+  const [importing, setImporting] = useState(false);
+
+  const importFromHealthKit = useCallback(async () => {
+    if (!isHealthKitAvailable()) return;
+    const granted = await requestHealthKitPermission();
+    if (!granted) return;
+
+    setImporting(true);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const workouts = await fetchRunningWorkouts(thirtyDaysAgo.toISOString());
+
+    const existingDates = new Set(sessions.map(s => s.date));
+    let imported = 0;
+    for (const w of workouts) {
+      const date = w.startDate.split('T')[0];
+      if (existingDates.has(date)) continue;
+      const pace = w.distanceKm > 0 ? Math.round(w.durationSeconds / w.distanceKm) : 0;
+      addSession({
+        date,
+        distanceKm: w.distanceKm,
+        durationSeconds: w.durationSeconds,
+        pacePerKm: pace,
+        calories: w.calories,
+        notes: `${w.sourceName}에서 가져옴`,
+      });
+      imported++;
+    }
+    setImporting(false);
+    if (imported > 0) alert(`${imported}개 러닝 기록을 가져왔습니다!`);
+  }, [sessions, addSession]);
   const [view, setView] = useState<View>('list');
 
   // Active run state
@@ -202,6 +234,13 @@ export default function RunningPage() {
             수동 입력
           </Button>
         </div>
+
+        {/* HealthKit Import (iOS only) */}
+        {isHealthKitAvailable() && (
+          <Button variant="ghost" fullWidth onClick={importFromHealthKit} disabled={importing}>
+            {importing ? '가져오는 중...' : 'Nike Run Club / Apple Watch 데이터 가져오기'}
+          </Button>
+        )}
 
         {/* History */}
         {sessions.length > 0 && (

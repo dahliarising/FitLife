@@ -1,60 +1,78 @@
 /**
- * HealthKit 연동 레이어
+ * HealthKit 연동 — NRC 러닝 데이터 읽기 + 운동 데이터 기록
+ *
+ * Nike Run Club → HealthKit에 HKWorkout으로 기록
+ * → 이 앱이 HealthKit에서 읽어와서 RunSession으로 변환
+ *
  * Capacitor 환경에서만 동작. 웹에서는 graceful fallback.
  */
 
-interface HealthData {
+export interface HealthKitRunData {
+  startDate: string;
+  endDate: string;
+  distanceKm: number;
+  durationSeconds: number;
+  calories: number;
+  sourceName: string; // "Nike Run Club", "Apple Watch" 등
+}
+
+export interface HealthKitDayStats {
   steps: number;
-  heartRate: number;
   activeCalories: number;
+  restingHeartRate: number;
+}
+
+/** Capacitor 네이티브 브릿지 호출 헬퍼 */
+async function callNative<T>(method: string, args?: Record<string, unknown>): Promise<T | null> {
+  if (typeof window === 'undefined') return null;
+  const cap = (window as unknown as Record<string, unknown>).Capacitor as { Plugins?: Record<string, Record<string, (args?: unknown) => Promise<T>>> } | undefined;
+  if (!cap?.Plugins?.FitLifeHealth) return null;
+  try {
+    return await cap.Plugins.FitLifeHealth[method](args);
+  } catch {
+    return null;
+  }
 }
 
 /** HealthKit 사용 가능 여부 */
 export function isHealthKitAvailable(): boolean {
-  return typeof window !== 'undefined' && 'Capacitor' in window;
+  if (typeof window === 'undefined') return false;
+  const cap = (window as unknown as Record<string, unknown>).Capacitor as { isNativePlatform?: () => boolean } | undefined;
+  return cap?.isNativePlatform?.() ?? false;
 }
 
-/** 오늘의 건강 데이터 조회 (Capacitor 플러그인 필요) */
-export async function getTodayHealthData(): Promise<HealthData | null> {
-  if (!isHealthKitAvailable()) return null;
-
-  try {
-    // @capacitor-community/health 플러그인 사용 시
-    // const { Health } = await import('@capacitor-community/health');
-    // const steps = await Health.queryAggregated({ ... });
-
-    // 현재는 Capacitor 플러그인 미설치 → null 반환
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-/** HealthKit에 운동 데이터 기록 */
-export async function writeWorkoutToHealthKit(data: {
-  startDate: string;
-  endDate: string;
-  calories: number;
-  activityType: string;
-}): Promise<boolean> {
-  if (!isHealthKitAvailable()) return false;
-
-  try {
-    // Capacitor HealthKit 플러그인으로 기록
-    // 플러그인 설치 후 구현
-    return false;
-  } catch {
-    return false;
-  }
+/** HealthKit 권한 요청 */
+export async function requestHealthKitPermission(): Promise<boolean> {
+  const result = await callNative<{ granted: boolean }>('requestPermission');
+  return result?.granted ?? false;
 }
 
 /**
- * HealthKit 설정 가이드
- *
- * 1. npm install @capacitor-community/health
- * 2. iOS: Info.plist에 Privacy 키 추가
- *    - NSHealthShareUsageDescription
- *    - NSHealthUpdateUsageDescription
- * 3. Xcode에서 HealthKit capability 활성화
- * 4. 위 함수들의 실제 구현 활성화
+ * HealthKit에서 러닝 데이터 가져오기 (NRC 포함)
+ * startDate 이후의 모든 러닝 워크아웃을 반환
  */
+export async function fetchRunningWorkouts(
+  startDate: string,
+): Promise<HealthKitRunData[]> {
+  const result = await callNative<{ workouts: HealthKitRunData[] }>(
+    'fetchRunningWorkouts',
+    { startDate },
+  );
+  return result?.workouts ?? [];
+}
+
+/** 오늘의 걸음 수 + 활동 칼로리 + 안정시 심박수 */
+export async function fetchTodayStats(): Promise<HealthKitDayStats | null> {
+  return callNative<HealthKitDayStats>('fetchTodayStats');
+}
+
+/** 운동 세션을 HealthKit에 기록 */
+export async function writeWorkout(data: {
+  startDate: string;
+  endDate: string;
+  calories: number;
+  activityType: 'strength' | 'running';
+}): Promise<boolean> {
+  const result = await callNative<{ success: boolean }>('writeWorkout', data);
+  return result?.success ?? false;
+}
