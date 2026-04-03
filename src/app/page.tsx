@@ -6,9 +6,11 @@ import { useWorkout } from '@/contexts/WorkoutContext';
 import { useRoutine } from '@/contexts/RoutineContext';
 import { useDiet } from '@/contexts/DietContext';
 import { useSleep } from '@/contexts/SleepContext';
+import { useMeditation } from '@/contexts/MeditationContext';
 import { calculateSleepHours } from '@/types/sleep';
 import { ROUTINE_PRESETS } from '@/data/routines';
 import TodayRoutine from '@/components/workout/TodayRoutine';
+import Link from 'next/link';
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -17,7 +19,10 @@ export default function HomePage() {
   const { settings } = useRoutine();
   const { getDailyNutrition } = useDiet();
   const { getTodayRecord } = useSleep();
+  const { getStreak, getTodayMinutes } = useMeditation();
   const preset = ROUTINE_PRESETS[settings.splitType];
+  const meditationStreak = getStreak();
+  const meditationMinutes = getTodayMinutes();
   const today = new Date().toISOString().split('T')[0];
   const dailyNutrition = getDailyNutrition(today);
   const sleepRecord = getTodayRecord();
@@ -103,6 +108,35 @@ export default function HomePage() {
             <TodayRoutine compact />
           </div>
         </Card>
+
+        {/* 명상 & 웰니스 */}
+        <Link href="/sleep">
+          <Card>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-lg">
+                  🧘
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">마음 챙김</p>
+                  <p className="text-xs text-muted">
+                    {meditationMinutes > 0
+                      ? `오늘 ${meditationMinutes}분 명상`
+                      : '오늘 아직 명상하지 않았어요'}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                {meditationStreak > 0 && (
+                  <p className="text-sm font-bold text-primary">{meditationStreak}일 연속</p>
+                )}
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 text-muted ml-auto">
+                  <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+          </Card>
+        </Link>
 
         {/* 주간 스트릭 */}
         <Card>
