@@ -7,6 +7,9 @@ import { RoutineProvider } from "@/contexts/RoutineContext";
 import { DietProvider } from "@/contexts/DietContext";
 import { SleepProvider } from "@/contexts/SleepContext";
 import { MeditationProvider } from "@/contexts/MeditationContext";
+import { BodyProvider } from "@/contexts/BodyContext";
+import { RunningProvider } from "@/contexts/RunningContext";
+import { HabitProvider } from "@/contexts/HabitContext";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 
 const geistSans = Geist({
@@ -61,6 +64,9 @@ export default function RootLayout({
         <WorkoutProvider>
           <DietProvider>
             <SleepProvider>
+              <BodyProvider>
+              <RunningProvider>
+              <HabitProvider>
               <MeditationProvider>
               <RoutineProvider>
                 <main className="flex-1 pb-20">
@@ -69,6 +75,9 @@ export default function RootLayout({
                 <BottomNav />
               </RoutineProvider>
               </MeditationProvider>
+              </HabitProvider>
+              </RunningProvider>
+              </BodyProvider>
             </SleepProvider>
           </DietProvider>
         </WorkoutProvider>

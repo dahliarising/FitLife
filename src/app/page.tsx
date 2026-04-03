@@ -7,6 +7,10 @@ import { useRoutine } from '@/contexts/RoutineContext';
 import { useDiet } from '@/contexts/DietContext';
 import { useSleep } from '@/contexts/SleepContext';
 import { useMeditation } from '@/contexts/MeditationContext';
+import { useHabits } from '@/contexts/HabitContext';
+import { useBody } from '@/contexts/BodyContext';
+import { useRunning } from '@/contexts/RunningContext';
+import { generateCoachInsights } from '@/lib/ai-coach';
 import { calculateSleepHours } from '@/types/sleep';
 import { ROUTINE_PRESETS } from '@/data/routines';
 import TodayRoutine from '@/components/workout/TodayRoutine';
@@ -23,6 +27,14 @@ export default function HomePage() {
   const preset = ROUTINE_PRESETS[settings.splitType];
   const meditationStreak = getStreak();
   const meditationMinutes = getTodayMinutes();
+  const { habits, getTodayCount, increment, getTodayCompletionRate } = useHabits();
+  const habitCompletion = getTodayCompletionRate();
+  const { records: bodyRecords } = useBody();
+  const { sessions: runSessions } = useRunning();
+  const { meals } = useDiet();
+  const { records: sleepRecords } = useSleep();
+  const { sessions: medSessions } = useMeditation();
+  const coachInsights = generateCoachInsights(sessions, meals, sleepRecords, medSessions, bodyRecords, runSessions);
   const today = new Date().toISOString().split('T')[0];
   const dailyNutrition = getDailyNutrition(today);
   const sleepRecord = getTodayRecord();
@@ -98,6 +110,26 @@ export default function HomePage() {
           </div>
         </Card>
 
+        {/* AI 코치 인사이트 */}
+        {coachInsights.length > 0 && coachInsights[0].id !== 'all-good' && (
+          <Card>
+            <h2 className="text-sm font-semibold text-muted mb-2">AI 코치</h2>
+            <div className="space-y-2">
+              {coachInsights.slice(0, 3).map(insight => (
+                <div key={insight.id} className={`flex gap-2.5 items-start p-2.5 rounded-xl ${
+                  insight.priority === 'high' ? 'bg-danger/5' : 'bg-surface-hover'
+                }`}>
+                  <span className="text-sm mt-0.5 shrink-0">{insight.icon}</span>
+                  <div>
+                    <p className="text-sm font-medium">{insight.title}</p>
+                    <p className="text-xs text-muted mt-0.5">{insight.message}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
         {/* 오늘의 운동 */}
         <Card padding="none">
           <div className="px-4 pt-4 pb-2 flex items-center justify-between">
@@ -137,6 +169,32 @@ export default function HomePage() {
             </div>
           </Card>
         </Link>
+
+        {/* 습관 체크리스트 */}
+        <Card>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-muted">오늘의 습관</h2>
+            <span className="text-xs text-primary font-medium">{habitCompletion}%</span>
+          </div>
+          <div className="space-y-2">
+            {habits.map(habit => {
+              const count = getTodayCount(habit.id);
+              const done = count >= habit.targetPerDay;
+              return (
+                <button key={habit.id} onClick={() => increment(habit.id)}
+                  className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-colors ${done ? 'bg-secondary/10' : 'bg-surface-hover'}`}>
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-base">{habit.icon}</span>
+                    <span className={`text-sm ${done ? 'line-through text-muted' : ''}`}>{habit.name}</span>
+                  </div>
+                  <span className={`text-xs font-medium ${done ? 'text-secondary' : 'text-muted'}`}>
+                    {count}/{habit.targetPerDay}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </Card>
 
         {/* 주간 스트릭 */}
         <Card>
