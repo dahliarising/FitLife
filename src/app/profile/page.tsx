@@ -8,6 +8,9 @@ import { useBody } from '@/contexts/BodyContext';
 import { isFirebaseEnabled, signIn, backupToCloud, restoreFromCloud } from '@/lib/firebase';
 import { ROUTINE_PRESETS, SPLIT_OPTIONS } from '@/data/routines';
 import { MUSCLE_GROUP_LABELS } from '@/types/workout';
+import ThemeToggle from '@/components/ThemeToggle';
+import { exportAllDataAsJson, exportWorkoutsAsCsv } from '@/lib/export-data';
+import { getReminders, saveReminders, requestNotificationPermission, scheduleAllReminders, Reminder } from '@/lib/reminders';
 
 const TIME_OPTIONS = [30, 45, 60, 90];
 
@@ -21,6 +24,7 @@ export default function ProfilePage() {
   const minWeight = Math.min(...trend.map(r => r.weight), maxWeight);
 
   const [syncStatus, setSyncStatus] = useState<string>('');
+  const [reminders, setRemindersState] = useState<Reminder[]>(() => getReminders());
   const [showBodyForm, setShowBodyForm] = useState(false);
   const [formWeight, setFormWeight] = useState(latest?.weight?.toString() ?? '75');
   const [formFat, setFormFat] = useState(latest?.bodyFatPercent?.toString() ?? '');
@@ -214,6 +218,47 @@ export default function ProfilePage() {
           ) : (
             <p className="text-xs text-muted">.env.local에 Firebase 설정을 추가하면 클라우드 동기화가 활성화됩니다</p>
           )}
+        </Card>
+
+        {/* 알림 설정 */}
+        <Card>
+          <h3 className="text-sm font-semibold text-muted mb-3">알림</h3>
+          <div className="space-y-2">
+            {reminders.map(r => (
+              <div key={r.id} className="flex items-center justify-between py-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">{r.label}</span>
+                  <span className="text-xs text-muted">{r.time}</span>
+                </div>
+                <button onClick={async () => {
+                  if (!r.enabled) await requestNotificationPermission();
+                  const updated = reminders.map(rem => rem.id === r.id ? { ...rem, enabled: !rem.enabled } : rem);
+                  setRemindersState(updated);
+                  saveReminders(updated);
+                  scheduleAllReminders();
+                }}
+                  className={`w-10 h-6 rounded-full transition-colors relative ${r.enabled ? 'bg-primary' : 'bg-surface-hover'}`}>
+                  <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${r.enabled ? 'translate-x-4.5 left-0.5' : 'left-0.5'}`}
+                    style={{ transform: r.enabled ? 'translateX(16px)' : 'translateX(0)' }} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* 테마 */}
+        <Card>
+          <h3 className="text-sm font-semibold text-muted mb-3">테마</h3>
+          <ThemeToggle />
+        </Card>
+
+        {/* 데이터 내보내기 */}
+        <Card>
+          <h3 className="text-sm font-semibold text-muted mb-3">데이터 내보내기</h3>
+          <div className="flex gap-2">
+            <Button variant="outline" fullWidth onClick={exportAllDataAsJson}>JSON 전체</Button>
+            <Button variant="outline" fullWidth onClick={exportWorkoutsAsCsv}>운동 CSV</Button>
+          </div>
         </Card>
 
         {/* 목표 */}
