@@ -84,26 +84,26 @@ export default function HomePage() {
   return (
     <>
       <Header />
-      <div className="mx-auto max-w-lg px-4 py-6 space-y-6">
+      <div className="mx-auto max-w-lg px-4 py-6 space-y-4">
         {/* 오늘의 요약 카드 */}
         <Card>
           <h2 className="text-sm font-semibold text-muted mb-3">오늘의 요약</h2>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-2xl font-bold text-primary">
-                {todayStats.sets || '—'}
+              <p className={`text-2xl font-bold ${todayStats.sets ? 'text-primary' : 'text-foreground/30'}`}>
+                {todayStats.sets || 0}
               </p>
               <p className="text-xs text-muted">완료 세트</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-secondary">
-                {dailyNutrition.calories || '—'}
+              <p className={`text-2xl font-bold ${dailyNutrition.calories ? 'text-secondary' : 'text-foreground/30'}`}>
+                {dailyNutrition.calories || 0}
               </p>
               <p className="text-xs text-muted">칼로리</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-accent">
-                {sleepHours > 0 ? `${sleepHours}h` : '—'}
+              <p className={`text-2xl font-bold ${sleepHours > 0 ? 'text-accent' : 'text-foreground/30'}`}>
+                {sleepHours > 0 ? `${sleepHours}h` : 0}
               </p>
               <p className="text-xs text-muted">수면</p>
             </div>
@@ -146,8 +146,13 @@ export default function HomePage() {
           <Card>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-lg">
-                  🧘
+                <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-purple-500">
+                    <circle cx="12" cy="5" r="2" />
+                    <path d="M4 20c0-4 3.5-7 8-7s8 3 8 7" />
+                    <path d="M8 14l-2 2m10-2l2 2" />
+                    <path d="M12 12v3" />
+                  </svg>
                 </div>
                 <div>
                   <p className="font-semibold text-sm">마음 챙김</p>

@@ -13,7 +13,6 @@ import {
 } from '@/types/sleep';
 import {
   CATEGORY_LABELS,
-  CATEGORY_ICONS,
   MeditationCategory,
 } from '@/types/meditation';
 import {
@@ -27,6 +26,15 @@ import MeditationTimer from '@/components/meditation/MeditationTimer';
 
 type TabType = 'sleep' | 'meditate';
 type MeditateView = 'menu' | 'breathing' | 'timer' | 'guided';
+
+const CATEGORY_CIRCLE_COLORS: Record<MeditationCategory, string> = {
+  stress: 'bg-red-100 text-red-600',
+  sleep: 'bg-indigo-100 text-indigo-600',
+  focus: 'bg-amber-100 text-amber-600',
+  gratitude: 'bg-emerald-100 text-emerald-600',
+  breathing: 'bg-blue-100 text-blue-600',
+  'body-scan': 'bg-purple-100 text-purple-600',
+};
 
 const QUALITY_OPTIONS: SleepQuality[] = [1, 2, 3, 4, 5];
 
@@ -205,7 +213,9 @@ function MeditateTab() {
               className="w-full px-4 py-3 flex items-center justify-between hover:bg-surface-hover transition-colors text-left"
             >
               <div className="flex items-center gap-3">
-                <span className="text-lg">{CATEGORY_ICONS[preset.category]}</span>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${CATEGORY_CIRCLE_COLORS[preset.category]}`}>
+                  {CATEGORY_LABELS[preset.category][0]}
+                </div>
                 <div>
                   <p className="text-sm font-medium">{preset.name}</p>
                   <p className="text-xs text-muted">{preset.description}</p>

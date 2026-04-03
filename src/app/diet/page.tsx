@@ -4,13 +4,27 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import { Card, Button } from '@/components/ui';
 import { useDiet } from '@/contexts/DietContext';
-import { MEAL_TYPE_LABELS, MEAL_TYPE_ICONS, MealType } from '@/types/diet';
+import { MEAL_TYPE_LABELS, MealType } from '@/types/diet';
 import { getFoodById, calculateNutrition } from '@/data/foods';
 
 const CALORIE_GOAL = 2300;
 const PROTEIN_GOAL = 150;
 
 const MEAL_ORDER: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
+
+const MEAL_TYPE_COLORS: Record<MealType, string> = {
+  breakfast: 'bg-amber-100 text-amber-700',
+  lunch: 'bg-orange-100 text-orange-700',
+  dinner: 'bg-indigo-100 text-indigo-700',
+  snack: 'bg-emerald-100 text-emerald-700',
+};
+
+const MEAL_TYPE_CHARS: Record<MealType, string> = {
+  breakfast: '아',
+  lunch: '점',
+  dinner: '저',
+  snack: '간',
+};
 
 export default function DietPage() {
   const { getTodayMeals, getDailyNutrition, deleteMeal } = useDiet();
@@ -80,7 +94,9 @@ export default function DietPage() {
             <Card key={mealType} padding="none">
               <div className="flex items-center justify-between px-4 pt-4 pb-2">
                 <div className="flex items-center gap-2">
-                  <span>{MEAL_TYPE_ICONS[mealType]}</span>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${MEAL_TYPE_COLORS[mealType]}`}>
+                    {MEAL_TYPE_CHARS[mealType]}
+                  </div>
                   <h3 className="text-sm font-semibold">{MEAL_TYPE_LABELS[mealType]}</h3>
                 </div>
                 <Link href={`/diet/new?meal=${mealType}`}>

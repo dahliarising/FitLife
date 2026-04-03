@@ -236,10 +236,10 @@ export default function ProfilePage() {
                   setRemindersState(updated);
                   saveReminders(updated);
                   scheduleAllReminders();
-                }}
-                  className={`w-10 h-6 rounded-full transition-colors relative ${r.enabled ? 'bg-primary' : 'bg-surface-hover'}`}>
-                  <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${r.enabled ? 'translate-x-4.5 left-0.5' : 'left-0.5'}`}
-                    style={{ transform: r.enabled ? 'translateX(16px)' : 'translateX(0)' }} />
+                }}>
+                  <div className={`relative w-11 h-6 rounded-full transition-colors ${r.enabled ? 'bg-primary' : 'bg-border'}`}>
+                    <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${r.enabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </div>
                 </button>
               </div>
             ))}
