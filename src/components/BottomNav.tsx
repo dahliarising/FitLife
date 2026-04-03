@@ -55,7 +55,7 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-border pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-t border-border/50 pb-safe">
       <div className="mx-auto max-w-lg flex items-center justify-around h-16">
         {tabs.map((tab) => {
           const isActive = tab.href === '/' ? pathname === '/' : pathname.startsWith(tab.href);
@@ -63,14 +63,19 @@ export default function BottomNav() {
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex flex-col items-center gap-0.5 px-3 py-2 text-xs transition-colors ${
-                isActive
-                  ? 'text-primary'
-                  : 'text-muted hover:text-foreground'
-              }`}
+              className={`
+                relative flex flex-col items-center gap-0.5 px-3 py-2 min-w-[56px]
+                text-xs transition-all duration-200
+                ${isActive ? 'text-primary' : 'text-muted hover:text-foreground'}
+              `}
             >
-              {tab.icon(isActive)}
+              <div className={`transition-transform duration-200 ${isActive ? 'scale-110' : ''}`}>
+                {tab.icon(isActive)}
+              </div>
               <span className="font-medium">{tab.label}</span>
+              {isActive && (
+                <div className="absolute -top-px left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
+              )}
             </Link>
           );
         })}

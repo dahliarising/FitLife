@@ -3,6 +3,7 @@ import { HTMLAttributes, ReactNode } from 'react';
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   padding?: 'none' | 'sm' | 'md' | 'lg';
+  hover?: boolean;
 }
 
 const paddingClasses = {
@@ -14,13 +15,20 @@ const paddingClasses = {
 
 export default function Card({
   padding = 'md',
+  hover = false,
   className = '',
   children,
   ...props
 }: CardProps) {
   return (
     <div
-      className={`rounded-2xl bg-surface shadow-sm border border-border ${paddingClasses[padding]} ${className}`}
+      className={`
+        rounded-2xl bg-surface border border-border
+        shadow-[var(--card-shadow)]
+        ${hover ? 'transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]' : ''}
+        ${paddingClasses[padding]}
+        ${className}
+      `}
       {...props}
     >
       {children}
