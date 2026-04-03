@@ -69,7 +69,7 @@ export default function RootLayout({
               <HabitProvider>
               <MeditationProvider>
               <RoutineProvider>
-                <main className="flex-1 pb-20">
+                <main className="flex-1 pb-24">
                   {children}
                 </main>
                 <BottomNav />

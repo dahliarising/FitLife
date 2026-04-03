@@ -119,7 +119,11 @@ export default function HomePage() {
                 <div key={insight.id} className={`flex gap-2.5 items-start p-2.5 rounded-xl ${
                   insight.priority === 'high' ? 'bg-danger/5' : 'bg-surface-hover'
                 }`}>
-                  <span className="text-sm mt-0.5 shrink-0">{insight.icon}</span>
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold ${
+                    insight.priority === 'high' ? 'bg-danger/10 text-danger' : 'bg-primary/10 text-primary'
+                  }`}>
+                    {insight.category === 'workout' ? '운' : insight.category === 'diet' ? '식' : insight.category === 'sleep' ? '수' : insight.category === 'meditation' ? '명' : '!'}
+                  </div>
                   <div>
                     <p className="text-sm font-medium">{insight.title}</p>
                     <p className="text-xs text-muted mt-0.5">{insight.message}</p>
@@ -189,7 +193,9 @@ export default function HomePage() {
                 <button key={habit.id} onClick={() => increment(habit.id)}
                   className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-colors ${done ? 'bg-secondary/10' : 'bg-surface-hover'}`}>
                   <div className="flex items-center gap-2.5">
-                    <span className="text-base">{habit.icon}</span>
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold ${done ? 'bg-secondary/20 text-secondary' : 'bg-surface-hover text-muted'}`}>
+                      {habit.name[0]}
+                    </div>
                     <span className={`text-sm ${done ? 'line-through text-muted' : ''}`}>{habit.name}</span>
                   </div>
                   <span className={`text-xs font-medium ${done ? 'text-secondary' : 'text-muted'}`}>
